@@ -58,6 +58,33 @@ If you would rather not compile, the
 [releases](https://github.com/taross-f/hawdl/releases) carry a prebuilt
 universal tarball instead.
 
+## Updating
+
+`brew upgrade` on its own will **never** update this. The formula is head-only,
+and Homebrew does not check upstream for a HEAD install unless asked to — it
+reports the package as up to date indefinitely:
+
+```sh
+brew update                                     # pull the latest formula
+brew upgrade --fetch-HEAD taross-f/hawdl/hawdl  # --fetch-HEAD is not optional
+```
+
+`brew reinstall taross-f/hawdl/hawdl` is the blunter equivalent: it always
+rebuilds from current HEAD, changed or not.
+
+Neither restarts anything. Until you do, the daemon and the menu bar app are
+both still running the previous binaries:
+
+```sh
+sudo brew services restart hawdl
+pkill -x HawdlBar && open "$(brew --prefix hawdl)/HawdlBar.app"
+```
+
+Restarting the daemon brings awdl0 back up for a moment. That is deliberate:
+`hawdld` restores the interface before exiting, then the new process re-applies
+the hold from its state file. `hawdl status` reports the running daemon's
+version, so it tells you whether the restart actually took.
+
 ## Uninstall
 
 ```sh
