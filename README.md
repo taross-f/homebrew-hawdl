@@ -31,7 +31,10 @@ Without it, neither the `hawdl` CLI nor `HawdlBar.app` has anything to talk to.
 | `hawdl` | the CLI: `status` / `hold` / `release` / `watch` |
 | `HawdlBar.app` | menu bar app, assembled into the formula's prefix |
 
-The menu bar app is **not** placed in `/Applications` automatically:
+**Linking the menu bar app is required, not cosmetic.** Homebrew formulae do
+not write to `/Applications`, so the app is installed inside the prefix. Until
+you link it there is nothing to launch and nothing appears in the menu bar —
+which looks exactly like the app failing to install:
 
 ```sh
 ln -sfn "$(brew --prefix hawdl)/HawdlBar.app" /Applications/HawdlBar.app

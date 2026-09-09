@@ -47,17 +47,20 @@ class Hawdl < Formula
 
   def caveats
     <<~EOS
-      hawdld needs root to change interface flags, so start it with sudo:
+      Two steps are required. Neither happens automatically.
 
-        sudo brew services start hawdl
+      1. Start the daemon. Changing interface flags needs root, so this needs
+         sudo. Without it, `hawdl` and HawdlBar have nothing to talk to:
 
-      Without it, `hawdl` and HawdlBar have nothing to talk to.
+           sudo brew services start hawdl
 
-      The menu bar app is not installed into /Applications automatically.
-      Link it yourself if you want it in Launchpad and in the login items UI:
+      2. Link the menu bar app. Homebrew formulae do not write to
+         /Applications, so it is installed inside the prefix instead. Until
+         you link it there is nothing to launch, and nothing will appear in
+         the menu bar:
 
-        ln -sfn #{opt_prefix}/HawdlBar.app /Applications/HawdlBar.app
-        open /Applications/HawdlBar.app
+           ln -sfn #{opt_prefix}/HawdlBar.app /Applications/HawdlBar.app
+           open /Applications/HawdlBar.app
 
       Holding awdl0 down disables AirDrop, Handoff, Sidecar, Universal Control
       and Continuity Camera. Toggle it back with `hawdl release` or from the
