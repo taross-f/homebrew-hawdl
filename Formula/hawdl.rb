@@ -29,6 +29,11 @@ class Hawdl < Formula
     (app/"Contents/MacOS").mkpath
     (app/"Contents/MacOS").install ".build/release/HawdlBar"
     (app/"Contents").install "Sources/HawdlBar/Resources/Info.plist"
+
+    # swift build ad-hoc signs the bare executable, and adding Info.plist
+    # afterwards changes the bundle out from under that signature. macOS then
+    # refuses to launch it, silently: no error, and no menu bar item.
+    system "codesign", "--force", "--deep", "--sign", "-", app
   end
 
   service do
@@ -66,6 +71,9 @@ class Hawdl < Formula
   test do
     assert_match(/^hawdl \d+\.\d+\.\d+$/, shell_output("#{bin}/hawdl --version").strip)
     assert_match(/^hawdld \d+\.\d+\.\d+$/, shell_output("#{bin}/hawdld --version").strip)
+
+    # An unlaunchable bundle fails silently at runtime, so catch it here.
+    system "codesign", "--verify", "--deep", "--strict", prefix/"HawdlBar.app"
 
     # The daemon must come up, serve the protocol and shut down cleanly without
     # root, using a simulated interface.
