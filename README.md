@@ -31,14 +31,20 @@ Without it, neither the `hawdl` CLI nor `HawdlBar.app` has anything to talk to.
 | `hawdl` | the CLI: `status` / `hold` / `release` / `watch` |
 | `HawdlBar.app` | menu bar app, assembled into the formula's prefix |
 
-**Linking the menu bar app is required, not cosmetic.** Homebrew formulae do
-not write to `/Applications`, so the app is installed inside the prefix. Until
-you link it there is nothing to launch and nothing appears in the menu bar —
-which looks exactly like the app failing to install:
+**Launching the menu bar app is required.** Nothing launches it for you, and
+until it is running there is no menu bar item — which looks exactly like the
+app failing to install:
+
+```sh
+open "$(brew --prefix hawdl)/HawdlBar.app"
+```
+
+A bundle runs from wherever it lives, so that is enough. Linking it into
+`/Applications` is optional convenience — Spotlight, Launchpad, and a sane
+entry under System Settings -> General -> Login Items:
 
 ```sh
 ln -sfn "$(brew --prefix hawdl)/HawdlBar.app" /Applications/HawdlBar.app
-open /Applications/HawdlBar.app
 ```
 
 ## Before you install
@@ -56,7 +62,7 @@ universal tarball instead.
 
 ```sh
 sudo brew services stop hawdl   # this brings awdl0 back up
-rm -f /Applications/HawdlBar.app
+rm -f /Applications/HawdlBar.app   # only if you linked it
 brew uninstall hawdl
 brew untap taross-f/hawdl
 sudo rm -rf "/Library/Application Support/hawdl"

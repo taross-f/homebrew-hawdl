@@ -54,13 +54,16 @@ class Hawdl < Formula
 
            sudo brew services start hawdl
 
-      2. Link the menu bar app. Homebrew formulae do not write to
-         /Applications, so it is installed inside the prefix instead. Until
-         you link it there is nothing to launch, and nothing will appear in
-         the menu bar:
+      2. Launch the menu bar app. Nothing launches it for you, and until it
+         is running there is no menu bar item:
 
-           ln -sfn #{opt_prefix}/HawdlBar.app /Applications/HawdlBar.app
-           open /Applications/HawdlBar.app
+           open #{opt_prefix}/HawdlBar.app
+
+      A bundle runs from wherever it lives, so that is enough. Optionally,
+      link it into /Applications for Spotlight, Launchpad and a sane entry
+      in System Settings -> General -> Login Items:
+
+        ln -sfn #{opt_prefix}/HawdlBar.app /Applications/HawdlBar.app
 
       Holding awdl0 down disables AirDrop, Handoff, Sidecar, Universal Control
       and Continuity Camera. Toggle it back with `hawdl release` or from the
