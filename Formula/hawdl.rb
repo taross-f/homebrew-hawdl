@@ -29,6 +29,11 @@ class Hawdl < Formula
     (app/"Contents/MacOS").mkpath
     (app/"Contents/MacOS").install ".build/release/HawdlBar"
     (app/"Contents").install "Sources/HawdlBar/Resources/Info.plist"
+
+    # swift build ad-hoc signs the bare executable, and adding Info.plist
+    # afterwards changes the bundle out from under that signature. macOS then
+    # refuses to launch it, silently: no error, and no menu bar item.
+    system "codesign", "--force", "--deep", "--sign", "-", app
   end
 
   service do
@@ -42,17 +47,23 @@ class Hawdl < Formula
 
   def caveats
     <<~EOS
-      hawdld needs root to change interface flags, so start it with sudo:
+      Two steps are required. Neither happens automatically.
 
-        sudo brew services start hawdl
+      1. Start the daemon. Changing interface flags needs root, so this needs
+         sudo. Without it, `hawdl` and HawdlBar have nothing to talk to:
 
-      Without it, `hawdl` and HawdlBar have nothing to talk to.
+           sudo brew services start hawdl
 
-      The menu bar app is not installed into /Applications automatically.
-      Link it yourself if you want it in Launchpad and in the login items UI:
+      2. Launch the menu bar app. Nothing launches it for you, and until it
+         is running there is no menu bar item:
+
+           open #{opt_prefix}/HawdlBar.app
+
+      A bundle runs from wherever it lives, so that is enough. Optionally,
+      link it into /Applications for Spotlight, Launchpad and a sane entry
+      in System Settings -> General -> Login Items:
 
         ln -sfn #{opt_prefix}/HawdlBar.app /Applications/HawdlBar.app
-        open /Applications/HawdlBar.app
 
       Holding awdl0 down disables AirDrop, Handoff, Sidecar, Universal Control
       and Continuity Camera. Toggle it back with `hawdl release` or from the
@@ -66,6 +77,9 @@ class Hawdl < Formula
   test do
     assert_match(/^hawdl \d+\.\d+\.\d+$/, shell_output("#{bin}/hawdl --version").strip)
     assert_match(/^hawdld \d+\.\d+\.\d+$/, shell_output("#{bin}/hawdld --version").strip)
+
+    # An unlaunchable bundle fails silently at runtime, so catch it here.
+    system "codesign", "--verify", "--deep", "--strict", prefix/"HawdlBar.app"
 
     # The daemon must come up, serve the protocol and shut down cleanly without
     # root, using a simulated interface.
