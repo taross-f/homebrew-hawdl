@@ -13,6 +13,9 @@ class Hawdl < Formula
   # generated archive would make every `brew install` invisible — and its
   # bytes, and therefore its checksum, are not guaranteed stable over time.
   # stable:begin
+  url "https://github.com/taross-f/hawdl/releases/download/v0.1.0/hawdl-0.1.0-src.tar.gz"
+  version "0.1.0"
+  sha256 "678a9e2f49540b97dd9207d43faa27ea22e30d8fa968d723a0f90a3bee9fe563"
   # stable:end
   license "MIT"
   head "https://github.com/taross-f/hawdl.git", branch: "main"
