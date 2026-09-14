@@ -1,9 +1,10 @@
 class Hawdl < Formula
   desc "Keep macOS awdl0 down so AWDL stops stealing Wi-Fi airtime"
   homepage "https://github.com/taross-f/hawdl"
-  # Everything between the markers is written by the Release workflow in
-  # taross-f/hawdl on every tag, so do not edit it by hand. It is empty until
-  # the first tagged release, which leaves this formula head-only:
+  # Everything between the markers is written by .github/workflows/sync-formula.yml,
+  # which polls taross-f/hawdl for its newest release, so do not edit it by
+  # hand. It is empty until the first tagged release, which leaves this
+  # formula head-only:
   #
   #   brew install --HEAD taross-f/hawdl/hawdl
   #

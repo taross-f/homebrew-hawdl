@@ -113,9 +113,12 @@ ifconfig awdl0 | head -1
 ## Where things live
 
 The formula lives here; everything else — source, issues, releases — is in
-[taross-f/hawdl](https://github.com/taross-f/hawdl). Its Release workflow
-rewrites the formula's `url` and `sha256` here on every tag, so they are not
-edited by hand.
+[taross-f/hawdl](https://github.com/taross-f/hawdl). `Sync formula` checks
+there hourly and rewrites this formula's `url`, `version` and `sha256` from the
+newest release, so they are not edited by hand and a new version shows up here
+within the hour. That direction is deliberate: a push from the other repository
+would need a personal access token stored as a secret, while pulling needs
+nothing but this repository's own token.
 
 ## License
 

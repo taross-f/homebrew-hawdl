@@ -1,0 +1,141 @@
+name: Sync formula
+
+# taross-f/hawdl cannot push here: a workflow's GITHUB_TOKEN is scoped to its
+# own repository, and a cross-repository push would need a PAT kept in sync by
+# hand. So this tap pulls instead. The trade is latency — a release is picked
+# up on the next run rather than the moment it is published.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-formula
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: update the stable stanza
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # /releases/latest skips drafts and prereleases, so an unfinished
+      # release never reaches anyone's `brew install`.
+      - name: Read the latest hawdl release
+        id: release
+        env:
+          # A public endpoint; the token is here for the rate limit only.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          status="$(curl -sSL -o release.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/taross-f/hawdl/releases/latest)"
+
+          # Before the first tag this is a 404, which is not a failure: there
+          # is simply nothing to sync yet, and the formula stays head-only.
+          if [ "$status" = "404" ]; then
+            echo "no published release yet"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$status" != "200" ]; then
+            echo "::error::GET /releases/latest returned $status"
+            exit 1
+          fi
+
+          tag="$(jq -er '.tag_name' release.json)"
+
+          # The formula builds from the source tarball, not from the binary
+          # one next to it, so match on the name rather than taking assets[0].
+          mapfile -t urls < <(jq -r \
+            '.assets[] | select(.name | endswith("-src.tar.gz")) | .browser_download_url' \
+            release.json)
+          if [ "${#urls[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one -src.tar.gz asset on $tag, found ${#urls[@]}"
+            exit 1
+          fi
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "url=${urls[0]}" >> "$GITHUB_OUTPUT"
+          echo "$tag -> ${urls[0]}"
+
+      # Deliberately before the download: checksumming the tarball costs one
+      # asset download, and that download lands in the same count the README
+      # badge reports. Once per release is noise; hourly would not be.
+      - name: Check whether the formula is already current
+        id: current
+        if: steps.release.outputs.found == 'true'
+        env:
+          URL: ${{ steps.release.outputs.url }}
+        run: |
+          set -euo pipefail
+          if grep -qF "url \"$URL\"" Formula/hawdl.rb; then
+            echo "formula already points at $URL"
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rewrite the stable stanza
+        id: rewrite
+        if: steps.current.outputs.stale == 'true'
+        env:
+          URL: ${{ steps.release.outputs.url }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -o src.tar.gz "$URL"
+          CHECKSUM="$(sha256sum src.tar.gz | cut -d' ' -f1)" \
+          python3 - <<'PY'
+          import os
+          import pathlib
+
+          path = pathlib.Path("Formula/hawdl.rb")
+          formula = path.read_text()
+
+          # The markers are what makes this rewrite safe: without them the
+          # obvious regex would also match the head stanza's url.
+          begin, end = "  # stable:begin\n", "  # stable:end\n"
+          start = formula.index(begin) + len(begin)
+          stop = formula.index(end)
+
+          # An explicit version: Homebrew would otherwise read "0.1.0-src" off
+          # the asset's filename.
+          stanza = (
+              f'  url "{os.environ["URL"]}"\n'
+              f'  version "{os.environ["VERSION"]}"\n'
+              f'  sha256 "{os.environ["CHECKSUM"]}"\n'
+          )
+          path.write_text(formula[:start] + stanza + formula[stop:])
+          print(stanza)
+          PY
+          rm -f src.tar.gz release.json
+
+          # A formula that does not parse breaks every `brew` command run
+          # against this tap, including `brew update`.
+          ruby -c Formula/hawdl.rb
+
+      - name: Commit and push
+        if: steps.current.outputs.stale == 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "::error::the stanza was rewritten but nothing changed"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/hawdl.rb
+          git commit -m "hawdl $TAG"
+          git push
