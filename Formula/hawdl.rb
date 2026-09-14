@@ -1,18 +1,20 @@
 class Hawdl < Formula
   desc "Keep macOS awdl0 down so AWDL stops stealing Wi-Fi airtime"
   homepage "https://github.com/taross-f/hawdl"
-  license "MIT"
-  head "https://github.com/taross-f/hawdl.git", branch: "main"
-
-  # Head-only until the first tagged release:
+  # Everything between the markers is written by the Release workflow in
+  # taross-f/hawdl on every tag, so do not edit it by hand. It is empty until
+  # the first tagged release, which leaves this formula head-only:
   #
   #   brew install --HEAD taross-f/hawdl/hawdl
   #
-  # Tagging publishes a release whose notes carry the exact stanza to paste in
-  # here, checksum included, so this does not need computing by hand:
-  #
-  #   url "https://github.com/taross-f/hawdl/archive/refs/tags/v0.1.0.tar.gz"
-  #   sha256 "..."
+  # The tarball it points at is a release asset rather than the source archive
+  # GitHub generates for a tag. Only assets have a download count, so the
+  # generated archive would make every `brew install` invisible — and its
+  # bytes, and therefore its checksum, are not guaranteed stable over time.
+  # stable:begin
+  # stable:end
+  license "MIT"
+  head "https://github.com/taross-f/hawdl.git", branch: "main"
 
   depends_on xcode: ["15.0", :build]
   depends_on macos: :sonoma

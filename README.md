@@ -7,12 +7,17 @@ Wi-Fi.
 ## Install
 
 ```sh
-brew tap taross-f/hawdl
-brew install --HEAD taross-f/hawdl/hawdl
+brew install taross-f/hawdl/hawdl
 ```
 
-`--HEAD` is required until the first tagged release: the formula builds from
-`main` and has no stable stanza yet.
+This builds the latest release from source. `brew tap taross-f/hawdl` first is
+not needed: installing by the fully qualified name taps it for you.
+
+To track `main` instead of the latest release:
+
+```sh
+brew install --HEAD taross-f/hawdl/hawdl
+```
 
 **Starting the daemon is a separate, mandatory step.** Changing interface flags
 needs root, so `brew services` has to run as root too:
@@ -60,12 +65,16 @@ universal tarball instead.
 
 ## Updating
 
-`brew upgrade` on its own will **never** update this. The formula is head-only,
-and Homebrew does not check upstream for a HEAD install unless asked to — it
-reports the package as up to date indefinitely:
+```sh
+brew update                            # pull the latest formula
+brew upgrade taross-f/hawdl/hawdl
+```
+
+A `--HEAD` install is the exception: `brew upgrade` on its own will **never**
+update one. Homebrew does not check upstream for a HEAD install unless asked
+to, and reports the package as up to date indefinitely:
 
 ```sh
-brew update                                     # pull the latest formula
 brew upgrade --fetch-HEAD taross-f/hawdl/hawdl  # --fetch-HEAD is not optional
 ```
 
@@ -104,7 +113,9 @@ ifconfig awdl0 | head -1
 ## Where things live
 
 The formula lives here; everything else — source, issues, releases — is in
-[taross-f/hawdl](https://github.com/taross-f/hawdl).
+[taross-f/hawdl](https://github.com/taross-f/hawdl). Its Release workflow
+rewrites the formula's `url` and `sha256` here on every tag, so they are not
+edited by hand.
 
 ## License
 
